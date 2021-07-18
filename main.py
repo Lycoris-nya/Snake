@@ -9,9 +9,16 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+import random
+import sys
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
 
+from PyQt5.QtCore import pyqtSignal, QBasicTimer
+from PyQt5.QtGui import QPainter, QColor
+from PyQt5.QtWidgets import QFrame, QMainWindow
 
-class Ui_MainWindow(object):
+class Ui_MainWindow(QMainWindow):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(700, 600)
@@ -26,12 +33,14 @@ class Ui_MainWindow(object):
         self.board.setText("")
         self.board.setPixmap(QtGui.QPixmap("board.png"))
         self.board.setObjectName("board")
+
         self.background = QtWidgets.QLabel(self.centralwidget)
         self.background.setGeometry(QtCore.QRect(0, 0, 700, 460))
         self.background.setText("")
         self.background.setTextFormat(QtCore.Qt.PlainText)
         self.background.setPixmap(QtGui.QPixmap("Background.jpg"))
         self.background.setObjectName("background")
+
         self.text_level = QtWidgets.QLabel(self.centralwidget)
         self.text_level.setGeometry(QtCore.QRect(70, 465, 150, 40))
         font = QtGui.QFont()
@@ -76,6 +85,16 @@ class Ui_MainWindow(object):
         self.text_speed.setFont(font)
         self.text_speed.setStyleSheet("color: rgb(255, 255, 255);")
         self.text_speed.setObjectName("text_speed")
+
+        #self.play_zone = QtWidgets.QFrame(self.centralwidget)
+        self.play_zone = Play_zone(self)
+        self.setCentralWidget(self.play_zone)
+        self.play_zone.setGeometry(QtCore.QRect(0, 0, 700, 460))
+        self.play_zone.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.play_zone.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.play_zone.setObjectName("play_zone")
+        self.play_zone.start()
+
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 700, 22))
@@ -91,6 +110,7 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
+
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Snake"))
@@ -100,6 +120,238 @@ class Ui_MainWindow(object):
         self.text_speed.setText(_translate("MainWindow", "Speed: x1"))
         self.menuMenu.setTitle(_translate("MainWindow", "Menu"))
         self.menuRules.setTitle(_translate("MainWindow", "Rules"))
+
+class Play_zone(QFrame):
+    # speed of the snake
+    # timer countdown time
+    SPEED = 80
+
+    # block width and height
+    WIDTHINBLOCKS = 70
+    HEIGHTINBLOCKS = 48
+
+    # constructor
+    def __init__(self, parent):
+        super(Play_zone, self).__init__(parent)
+
+        # creating a timer
+        self.timer = QBasicTimer()
+
+        # snake
+        self.snake = [[5, 10], [5, 11]]
+
+        # current head x head
+        self.current_x_head = self.snake[0][0]
+        # current y head
+        self.current_y_head = self.snake[0][1]
+
+        # food list
+        self.food = []
+
+        # growing is false
+        self.grow_snake = False
+
+        # board list
+        self.board = []
+
+        # direction
+        self.direction = 1
+
+        # called drop food method
+        self.drop_food()
+
+        # setting focus
+        self.setFocusPolicy(Qt.StrongFocus)
+
+    # square width method
+    def square_width(self):
+        return self.contentsRect().width() / Play_zone.WIDTHINBLOCKS
+
+    # square height
+    def square_height(self):
+        return self.contentsRect().height() / Play_zone.HEIGHTINBLOCKS
+
+    # start method
+    def start(self):
+        # msg for status bar
+        # score = current len - 2
+
+        # starting timer
+        self.timer.start(Play_zone.SPEED, self)
+
+    # paint event
+    def paintEvent(self, event):
+
+        # creating painter object
+        painter = QPainter(self)
+
+        # getting rectangle
+        rect = self.contentsRect()
+
+        # board top
+        boardtop = rect.bottom() - Play_zone.HEIGHTINBLOCKS * self.square_height()
+
+        # drawing snake
+        for pos in self.snake:
+            self.draw_square(painter, rect.left() + pos[0] * self.square_width(),
+                             boardtop + pos[1] * self.square_height())
+
+        # drawing food
+        for pos in self.food:
+            self.draw_square(painter, rect.left() + pos[0] * self.square_width(),
+                             boardtop + pos[1] * self.square_height())
+
+    # drawing square
+    def draw_square(self, painter, x, y):
+        # color
+        color = QColor(0x228B22)
+
+        # painting rectangle
+        painter.fillRect(x + 1, y + 1, self.square_width() - 2,
+                         self.square_height() - 2, color)
+
+    # key press event
+    def keyPressEvent(self, event):
+
+        # getting key pressed
+        key = event.key()
+
+        # if left key pressed
+        if key == Qt.Key_Left:
+            # if direction is not right
+            if self.direction != 2:
+                # set direction to left
+                self.direction = 1
+
+        # if right key is pressed
+        elif key == Qt.Key_Right:
+            # if direction is not left
+            if self.direction != 1:
+                # set direction to right
+                self.direction = 2
+
+        # if down key is pressed
+        elif key == Qt.Key_Down:
+            # if direction is not up
+            if self.direction != 4:
+                # set direction to down
+                self.direction = 3
+
+        # if up key is pressed
+        elif key == Qt.Key_Up:
+            # if direction is not down
+            if self.direction != 3:
+                # set direction to up
+                self.direction = 4
+
+    # method to move the snake
+    def move_snake(self):
+
+        # if direction is left change its position
+        if self.direction == 1:
+            self.current_x_head, self.current_y_head = self.current_x_head - 1, self.current_y_head
+
+            # if it goes beyond left wall
+            if self.current_x_head < 0:
+                self.current_x_head = Play_zone.WIDTHINBLOCKS - 1
+
+        # if direction is right change its position
+        if self.direction == 2:
+            self.current_x_head, self.current_y_head = self.current_x_head + 1, self.current_y_head
+            # if it goes beyond right wall
+            if self.current_x_head == Play_zone.WIDTHINBLOCKS:
+                self.current_x_head = 0
+
+        # if direction is down change its position
+        if self.direction == 3:
+            self.current_x_head, self.current_y_head = self.current_x_head, self.current_y_head + 1
+            # if it goes beyond down wall
+            if self.current_y_head == Play_zone.HEIGHTINBLOCKS:
+                self.current_y_head = 0
+
+        # if direction is up change its position
+        if self.direction == 4:
+            self.current_x_head, self.current_y_head = self.current_x_head, self.current_y_head - 1
+            # if it goes beyond up wall
+            if self.current_y_head < 0:
+                self.current_y_head = Play_zone.HEIGHTINBLOCKS
+
+        # changing head position
+        head = [self.current_x_head, self.current_y_head]
+        # inset head in snake list
+        self.snake.insert(0, head)
+
+        # if snake grow is False
+        if not self.grow_snake:
+            # pop the last element
+            self.snake.pop()
+
+        else:
+            # show msg in status bar
+            self.msg2statusbar.emit(str(len(self.snake) - 2))
+            # make grow_snake to false
+            self.grow_snake = False
+
+    # time event method
+    def timerEvent(self, event):
+
+        # checking timer id
+        if event.timerId() == self.timer.timerId():
+            # call move snake method
+            self.move_snake()
+            # call food collision method
+            self.is_food_collision()
+            # call is suicide method
+            self.is_suicide()
+            # update the window
+            self.update()
+
+    # method to check if snake collides itself
+    def is_suicide(self):
+        # traversing the snake
+        for i in range(1, len(self.snake)):
+            # if collision found
+            if self.snake[i] == self.snake[0]:
+                # show game ended msg in status bar
+                #self.msg2statusbar.emit(str("Game Ended"))
+                # making background color black
+                self.setStyleSheet("background-color : black;")
+                # stopping the timer
+                self.timer.stop()
+                # updating the window
+                self.update()
+
+    # method to check if the food cis collied
+    def is_food_collision(self):
+
+        # traversing the position of the food
+        for pos in self.food:
+            # if food position is similar of snake position
+            if pos == self.snake[0]:
+                # remove the food
+                self.food.remove(pos)
+                # call drop food method
+                self.drop_food()
+                # grow the snake
+                self.grow_snake = True
+
+    # method to drop food on screen
+    def drop_food(self):
+        # creating random co-ordinates
+        x = random.randint(3, 58)
+        y = random.randint(3, 38)
+
+        # traversing if snake position is not equal to the
+        # food position so that food do not drop on snake
+        for pos in self.snake:
+            # if position matches
+            if pos == [x, y]:
+                # call drop food method again
+                self.drop_food()
+
+        # append food location
+        self.food.append([x, y])
+
 
 
 if __name__ == "__main__":
