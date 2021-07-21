@@ -37,7 +37,7 @@ class Ui_MainWindow(QMainWindow):
         self.text_level.setGeometry(QtCore.QRect(70, 465, 150, 40))
         font = QtGui.QFont()
         font.setFamily("Garamond")
-        font.setPointSize(24)
+        font.setPointSize(12)
         font.setBold(True)
         font.setUnderline(True)
         font.setWeight(75)
