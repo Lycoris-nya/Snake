@@ -98,6 +98,7 @@ class Ui_MainWindow(QMainWindow):
 
 
 class Food():
+
     acceleration = 0
     score = 1
     grow = 1
@@ -131,6 +132,7 @@ class Food():
 
 
 class Play_zone(QFrame):
+
     number_blocks_x = 40
     number_blocks_y = 26
 
@@ -141,16 +143,11 @@ class Play_zone(QFrame):
 
     def __init__(self, parent):
         super(Play_zone, self).__init__(parent)
+        self.set_standard_position()
         self.max_len = 4
-        self.direction = 3
         self.timer = QBasicTimer()
         self.default_speed = 90
-        self.acceleration = 1
-        self.speed = 90
         self.score = 0
-        self.snake = [[5, 10], [5, 11]]
-        self.head_x = self.snake[0][0]
-        self.head_y = self.snake[0][1]
         self.food = []
         self.grow_snake = False
         self.speed_changed = False
@@ -170,19 +167,19 @@ class Play_zone(QFrame):
         key = event.key()
 
         if key == Qt.Key_Down:
-            if self.direction != 4:
-                self.direction = 3
+            if self.direction != "up":
+                self.direction = "down"
         elif key == Qt.Key_Up:
-            if self.direction != 3:
-                self.direction = 4
+            if self.direction != "down":
+                self.direction = "up"
 
         elif key == Qt.Key_Left:
-            if self.direction != 2:
-                self.direction = 1
+            if self.direction != "right":
+                self.direction = "left"
 
         elif key == Qt.Key_Right:
-            if self.direction != 1:
-                self.direction = 2
+            if self.direction != "left":
+                self.direction = "right"
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -208,8 +205,14 @@ class Play_zone(QFrame):
             self.change_level()
             self.update()
 
-    def draw_rect(self, painter, x, y, color=QColor(0x1C542D)):
+    def set_standard_position(self):
+        self.direction = "down"
+        self.acceleration = 1
+        self.snake = [[5, 10], [5, 11]]
+        self.head_x = self.snake[0][0]
+        self.head_y = self.snake[0][1]
 
+    def draw_rect(self, painter, x, y, color=QColor(0x1C542D)):
         painter.fillRect(x + 1, y + 1, self.rect_width() - 2,
                          self.rect_height() - 2, color)
 
@@ -246,33 +249,28 @@ class Play_zone(QFrame):
         self.levels[4] = fourth_level
 
     def move_snake(self):
-        if self.direction == 1:
+        if self.direction == "left":
             self.head_x, self.head_y = self.head_x - 1, self.head_y
             if self.head_x < 0:
                 self.head_x = Play_zone.number_blocks_x - 1
 
-        if self.direction == 2:
+        if self.direction == "right":
             self.head_x, self.head_y = self.head_x + 1, self.head_y
             if self.head_x == Play_zone.number_blocks_x:
                 self.head_x = 0
 
-        if self.direction == 3:
+        if self.direction == "down":
             self.head_x, self.head_y = self.head_x, self.head_y + 1
             if self.head_y == Play_zone.number_blocks_y:
                 self.head_y = 0
 
-        if self.direction == 4:
+        if self.direction == "up":
             self.head_x, self.head_y = self.head_x, self.head_y - 1
             if self.head_y < 0:
                 self.head_y = Play_zone.number_blocks_y
 
         head = [self.head_x, self.head_y]
         self.snake.insert(0, head)
-
-        if self.speed_changed:
-            self.msg_acceleration.emit("Speed: x" + str(-(self.acceleration - 2)))
-            self.timer.stop()
-            self.start()
 
         if not self.score_changed:
             self.snake.pop()
@@ -297,11 +295,7 @@ class Play_zone(QFrame):
         if len(self.snake) >= self.max_len:
             self.timer.stop()
             if len(self.levels) > self.level:
-                self.acceleration = 1
-                self.snake = [[5, 10], [5, 11]]
-                self.head_x = self.snake[0][0]
-                self.head_y = self.snake[0][1]
-                self.direction = 3
+                self.set_standard_position()
                 self.level += 1
                 self.msg_level.emit("Level: " + str(self.level))
                 self.start()
@@ -325,11 +319,7 @@ class Play_zone(QFrame):
             self.lives -= 1
             self.msg_lives.emit("Lives: " + str(self.lives))
             if self.lives > 0:
-                self.acceleration = 1
-                self.snake = [[5, 10], [5, 11]]
-                self.head_x = self.snake[0][0]
-                self.head_y = self.snake[0][1]
-                self.direction = 3
+                self.set_standard_position()
                 self.start()
             else:
                 self.setStyleSheet("background-color : black;")
