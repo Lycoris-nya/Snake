@@ -1,9 +1,10 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
 import random
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
+import sys
 
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import *
 from PyQt5.QtCore import pyqtSignal, QBasicTimer
+from PyQt5.QtGui import *
 from PyQt5.QtGui import QPainter, QColor
 from PyQt5.QtWidgets import QFrame, QMainWindow, QMessageBox
 
@@ -33,27 +34,31 @@ class Ui_MainWindow(QMainWindow):
         self.board.setPixmap(QtGui.QPixmap("board.png"))
         self.board.setObjectName("board")
 
-        self.text_level = QtWidgets.QLabel(self.centralwidget)
-        self.text_level.setGeometry(QtCore.QRect(70, 465, 150, 40))
         font = QtGui.QFont()
         font.setFamily("Garamond")
         font.setPointSize(12)
         font.setBold(True)
         font.setUnderline(True)
         font.setWeight(75)
+
+        self.text_level = QtWidgets.QLabel(self.centralwidget)
+        self.text_level.setGeometry(QtCore.QRect(70, 465, 150, 40))
         self.text_level.setFont(font)
         self.text_level.setStyleSheet("color: rgb(255, 255, 255);")
         self.text_level.setObjectName("text_level")
+
         self.text_score = QtWidgets.QLabel(self.centralwidget)
         self.text_score.setGeometry(QtCore.QRect(70, 515, 170, 40))
         self.text_score.setFont(font)
         self.text_score.setStyleSheet("color: rgb(255, 255, 255);")
         self.text_score.setObjectName("text_score")
+
         self.text_lives = QtWidgets.QLabel(self.centralwidget)
         self.text_lives.setGeometry(QtCore.QRect(500, 465, 150, 40))
         self.text_lives.setFont(font)
         self.text_lives.setStyleSheet("color: rgb(255, 255, 255);")
         self.text_lives.setObjectName("text_lives")
+
         self.text_speed = QtWidgets.QLabel(self.centralwidget)
         self.text_speed.setGeometry(QtCore.QRect(500, 515, 150, 40))
         self.text_speed.setFont(font)
@@ -72,14 +77,19 @@ class Ui_MainWindow(QMainWindow):
         self.play_zone.start()
 
         MainWindow.setCentralWidget(self.centralwidget)
+
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 700, 22))
         self.menubar.setObjectName("menubar")
+
         self.menuMenu = QtWidgets.QMenu(self.menubar)
         self.menuMenu.setObjectName("menuMenu")
+
         self.menuRules = QtWidgets.QMenu(self.menubar)
         self.menuRules.setObjectName("menuRules")
+
         MainWindow.setMenuBar(self.menubar)
+
         self.menubar.addAction(self.menuMenu.menuAction())
         self.menubar.addAction(self.menuRules.menuAction())
 
@@ -98,7 +108,6 @@ class Ui_MainWindow(QMainWindow):
 
 
 class Food():
-
     acceleration = 0
     score = 1
     grow = 1
@@ -124,15 +133,14 @@ class Food():
 
     def fast_score(self):
         self.color = QColor(0x32127A)
-        self.acceleration = -0.1
+        self.acceleration = -1
 
     def slow_score(self):
         self.color = QColor(0x00C5CD)
-        self.acceleration = 0.1
+        self.acceleration = 1
 
 
 class Play_zone(QFrame):
-
     number_blocks_x = 40
     number_blocks_y = 26
 
@@ -146,7 +154,7 @@ class Play_zone(QFrame):
         self.set_standard_position()
         self.max_len = 4
         self.timer = QBasicTimer()
-        self.default_speed = 90
+        self.default_speed = 120
         self.score = 0
         self.food = []
         self.grow_snake = False
@@ -161,7 +169,7 @@ class Play_zone(QFrame):
         self.setFocusPolicy(Qt.StrongFocus)
 
     def start(self):
-        self.timer.start(self.default_speed * self.acceleration, self)
+        self.timer.start(self.default_speed * self.acceleration // 10, self)
 
     def keyPressEvent(self, event):
         key = event.key()
@@ -207,7 +215,7 @@ class Play_zone(QFrame):
 
     def set_standard_position(self):
         self.direction = "down"
-        self.acceleration = 1
+        self.acceleration = 10
         self.snake = [[5, 10], [5, 11]]
         self.head_x = self.snake[0][0]
         self.head_y = self.snake[0][1]
@@ -279,7 +287,7 @@ class Play_zone(QFrame):
             self.msg_score.emit("Score: " + str(self.score))
             self.score_changed = False
             if self.speed_changed:
-                self.msg_acceleration.emit("Speed: x" + str(-(self.acceleration - 2)))
+                self.msg_acceleration.emit("Speed: x" + str(-(self.acceleration - 20) / 10))
                 self.timer.stop()
                 self.start()
                 self.speed_changed = False
@@ -327,13 +335,14 @@ class Play_zone(QFrame):
                 self.end_game("You lose")
 
     def is_food_collision(self):
+        max_speed = 15
         for coordinates in self.food:
             if coordinates.x == self.snake[0][0] and coordinates.y == self.snake[0][1]:
                 self.food.remove(coordinates)
                 self.score += coordinates.score
                 self.score_changed = True
-                if (self.acceleration >= 0.2 and coordinates.acceleration < 0) or (
-                        self.acceleration <= 1.8 and coordinates.acceleration > 0):
+                if (self.acceleration >= 0.2 and coordinates.acceleration < 0) or \
+                        (self.acceleration <= max_speed and coordinates.acceleration > 0):
                     self.speed_changed = True
                     self.acceleration += coordinates.acceleration
                 if coordinates.grow != - 1:
@@ -364,8 +373,6 @@ class Play_zone(QFrame):
 
 
 if __name__ == "__main__":
-    import sys
-
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
