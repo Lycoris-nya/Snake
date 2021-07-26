@@ -93,10 +93,10 @@ class Ui_MainWindow(QMainWindow):
         self.menubar.addAction(self.menuMenu.menuAction())
         self.menubar.addAction(self.menuRules.menuAction())
 
-        self.retranslateUi(MainWindow)
+        self.retranslate_ui(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
-    def retranslateUi(self, MainWindow):
+    def retranslate_ui(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Snake"))
         self.text_level.setText(_translate("MainWindow", "Level: " + str(self.play_zone.level)))
@@ -107,10 +107,15 @@ class Ui_MainWindow(QMainWindow):
         self.menuRules.setTitle(_translate("MainWindow", "Rules"))
 
 
-class Food():
+class Food:
     acceleration = 0
     score = 1
     grow = 1
+    default_colour = 0xEFD334
+    bonus_colour = 0xED4830
+    decrease_colour = 0x8C1778
+    fast_colour = 0x32127A
+    slow_colour = 0x00C5CD
 
     def __init__(self, x, y):
         self.x = x
@@ -121,28 +126,33 @@ class Food():
         constructors[random.randint(0, 9)]()
 
     def default_score(self):
-        self.color = QColor(0xEFD334)
+        self.color = QColor(self.default_colour)
 
     def bonus_score(self):
-        self.color = QColor(0xED4830)
+        self.color = QColor(self.bonus_colour)
         self.score = 3
 
     def decrease_score(self):
-        self.color = QColor(0x8C1778)
+        self.color = QColor(self.decrease_colour)
         self.grow = -1
 
     def fast_score(self):
-        self.color = QColor(0x32127A)
+        self.color = QColor(self.fast_colour)
         self.acceleration = -1
 
     def slow_score(self):
-        self.color = QColor(0x00C5CD)
+        self.color = QColor(self.slow_colour)
         self.acceleration = 1
 
 
 class Play_zone(QFrame):
     number_blocks_x = 40
     number_blocks_y = 26
+    max_level = 4
+    start_speed = 10
+    start_direction = "down"
+    snake_colour = 0x1C542D
+    wall_colour = 0x2F4F4F
 
     msg_score = pyqtSignal(str)
     msg_acceleration = pyqtSignal(str)
@@ -194,16 +204,17 @@ class Play_zone(QFrame):
         rect = self.contentsRect()
         top_board = rect.bottom() - Play_zone.number_blocks_y * self.rect_height()
 
-        for coordinates in self.levels[self.level]:
-            self.draw_rect(painter, rect.left() + coordinates[0] * self.rect_width(),
-                           top_board + coordinates[1] * self.rect_height(), QColor(0x2F4F4F))
-        for coordinates in self.food:
-            self.draw_rect(painter, rect.left() + coordinates.x * self.rect_width(),
-                           top_board + coordinates.y * self.rect_height(), coordinates.color)
+        for wall in self.levels[self.level]:
+            self.draw_rect(painter, rect.left() + wall[0] * self.rect_width(),
+                           top_board + wall[1] * self.rect_height(), QColor(self.wall_colour))
+
+        for food in self.food:
+            self.draw_rect(painter, rect.left() + food.x * self.rect_width(),
+                           top_board + food.y * self.rect_height(), food.color)
             break
-        for coordinates in self.snake:
-            self.draw_rect(painter, rect.left() + coordinates[0] * self.rect_width(),
-                           top_board + coordinates[1] * self.rect_height())
+        for snake in self.snake:
+            self.draw_rect(painter, rect.left() + snake[0] * self.rect_width(),
+                           top_board + snake[1] * self.rect_height(), QColor(self.snake_colour))
 
     def timerEvent(self, event):
         if event.timerId() == self.timer.timerId():
@@ -214,14 +225,14 @@ class Play_zone(QFrame):
             self.update()
 
     def set_standard_position(self):
-        self.direction = "down"
-        self.acceleration = 10
-        self.msg_acceleration.emit("Speed: x" + str(-(self.acceleration - 20) / 10))
+        self.direction = self.start_direction
+        self.acceleration = self.start_speed
+        self.msg_acceleration.emit("Speed: x" + self.generate_speed_text())
         self.snake = [[5, 10], [5, 11]]
         self.head_x = self.snake[0][0]
         self.head_y = self.snake[0][1]
 
-    def draw_rect(self, painter, x, y, color=QColor(0x1C542D)):
+    def draw_rect(self, painter, x, y, color):
         painter.fillRect(x + 1, y + 1, self.rect_width() - 2,
                          self.rect_height() - 2, color)
 
@@ -288,7 +299,7 @@ class Play_zone(QFrame):
             self.msg_score.emit("Score: " + str(self.score))
             self.score_changed = False
             if self.speed_changed:
-                self.msg_acceleration.emit("Speed: x" + str(-(self.acceleration - 20) / 10))
+                self.msg_acceleration.emit("Speed: x" + self.generate_speed_text())
                 self.timer.stop()
                 self.start()
                 self.speed_changed = False
@@ -300,8 +311,11 @@ class Play_zone(QFrame):
                     self.snake.pop()
                 self.decrease_snake = False
 
+    def generate_speed_text(self):
+        return str((20 - self.acceleration) / 10)
+
     def change_level(self):
-        if len(self.snake) >= self.max_len:
+        if len(self.snake) >= self.max_len and self.level < self.max_level:
             self.timer.stop()
             if len(self.levels) > self.level:
                 self.set_standard_position()
@@ -335,16 +349,16 @@ class Play_zone(QFrame):
 
     def is_food_collision(self):
         max_speed = 15
-        for coordinates in self.food:
-            if coordinates.x == self.snake[0][0] and coordinates.y == self.snake[0][1]:
-                self.food.remove(coordinates)
-                self.score += coordinates.score
+        for food in self.food:
+            if food.x == self.snake[0][0] and food.y == self.snake[0][1]:
+                self.food.remove(food)
+                self.score += food.score
                 self.score_changed = True
-                if (self.acceleration >= 0.2 and coordinates.acceleration < 0) or \
-                        (self.acceleration <= max_speed and coordinates.acceleration > 0):
+                if (self.acceleration >= 0.2 and food.acceleration < 0) or \
+                        (self.acceleration <= max_speed and food.acceleration > 0):
                     self.speed_changed = True
-                    self.acceleration += coordinates.acceleration
-                if coordinates.grow != - 1:
+                    self.acceleration += food.acceleration
+                if food.grow != - 1:
                     self.grow_snake = True
                 else:
                     self.decrease_snake = True
@@ -382,7 +396,7 @@ class Play_zone(QFrame):
         self.lives = 3
         self.level = 1
         self.drop_food()
-        self.msg_acceleration.emit("Speed: x" + str(-(self.acceleration - 20) / 10))
+        self.msg_acceleration.emit("Speed: x" + self.generate_speed_text())
         self.msg_lives.emit("Lives: " + str(self.lives))
         self.msg_score.emit("Score: " + str(self.score))
         self.msg_level.emit("Level: " + str(self.level))
