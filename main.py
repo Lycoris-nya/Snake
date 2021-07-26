@@ -60,7 +60,7 @@ class Ui_MainWindow(QMainWindow):
         self.text_lives.setObjectName("text_lives")
 
         self.text_speed = QtWidgets.QLabel(self.centralwidget)
-        self.text_speed.setGeometry(QtCore.QRect(480, 515, 19 0, 40))
+        self.text_speed.setGeometry(QtCore.QRect(480, 515, 190, 40))
         self.text_speed.setFont(font)
         self.text_speed.setStyleSheet("color: rgb(255, 255, 255);")
         self.text_speed.setObjectName("text_speed")
