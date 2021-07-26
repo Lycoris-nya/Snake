@@ -42,25 +42,25 @@ class Ui_MainWindow(QMainWindow):
         font.setWeight(75)
 
         self.text_level = QtWidgets.QLabel(self.centralwidget)
-        self.text_level.setGeometry(QtCore.QRect(70, 465, 150, 40))
+        self.text_level.setGeometry(QtCore.QRect(90, 465, 150, 40))
         self.text_level.setFont(font)
         self.text_level.setStyleSheet("color: rgb(255, 255, 255);")
         self.text_level.setObjectName("text_level")
 
         self.text_score = QtWidgets.QLabel(self.centralwidget)
-        self.text_score.setGeometry(QtCore.QRect(70, 515, 170, 40))
+        self.text_score.setGeometry(QtCore.QRect(90, 515, 170, 40))
         self.text_score.setFont(font)
         self.text_score.setStyleSheet("color: rgb(255, 255, 255);")
         self.text_score.setObjectName("text_score")
 
         self.text_lives = QtWidgets.QLabel(self.centralwidget)
-        self.text_lives.setGeometry(QtCore.QRect(500, 465, 150, 40))
+        self.text_lives.setGeometry(QtCore.QRect(480, 465, 150, 40))
         self.text_lives.setFont(font)
         self.text_lives.setStyleSheet("color: rgb(255, 255, 255);")
         self.text_lives.setObjectName("text_lives")
 
         self.text_speed = QtWidgets.QLabel(self.centralwidget)
-        self.text_speed.setGeometry(QtCore.QRect(500, 515, 150, 40))
+        self.text_speed.setGeometry(QtCore.QRect(480, 515, 190, 40))
         self.text_speed.setFont(font)
         self.text_speed.setStyleSheet("color: rgb(255, 255, 255);")
         self.text_speed.setObjectName("text_speed")
@@ -99,10 +99,10 @@ class Ui_MainWindow(QMainWindow):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Snake"))
-        self.text_level.setText(_translate("MainWindow", "Level: 1"))
-        self.text_score.setText(_translate("MainWindow", "Score: 0"))
-        self.text_lives.setText(_translate("MainWindow", "Lives: 3"))
-        self.text_speed.setText(_translate("MainWindow", "Speed: x1"))
+        self.text_level.setText(_translate("MainWindow", "Level: " + str(self.play_zone.level)))
+        self.text_score.setText(_translate("MainWindow", "Score: " + str(self.play_zone.score)))
+        self.text_lives.setText(_translate("MainWindow", "Lives: " + str(self.play_zone.lives)))
+        self.text_speed.setText(_translate("MainWindow", "Speed: x" + str(-(self.play_zone.acceleration - 20) / 10)))
         self.menuMenu.setTitle(_translate("MainWindow", "Menu"))
         self.menuRules.setTitle(_translate("MainWindow", "Rules"))
 
