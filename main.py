@@ -5,7 +5,7 @@ from PyQt5.QtGui import *
 
 from PyQt5.QtCore import pyqtSignal, QBasicTimer
 from PyQt5.QtGui import QPainter, QColor
-from PyQt5.QtWidgets import QFrame, QMainWindow, QMessageBox
+from PyQt5.QtWidgets import QFrame, QMainWindow, QMessageBox, QPushButton
 
 
 class Ui_MainWindow(QMainWindow):
@@ -358,9 +358,17 @@ class Play_zone(QFrame):
     def end_game(self, message):
         end = QMessageBox()
         end.setWindowTitle("game over")
-        end.setText(message)
-        end.setStandardButtons(QMessageBox.Ok)
+        end.setText(message + "\nAnother one?")
+        end.setStandardButtons(QMessageBox.Yes|QMessageBox.No)
+        end.buttonClicked.connect(self.button_handler)
         end.exec_()
+
+    def button_handler(self, button):
+        if button.text() == "Yes":
+            self.restart()
+
+    def restart(self):
+       pass
 
 
 if __name__ == "__main__":
