@@ -216,6 +216,7 @@ class Play_zone(QFrame):
     def set_standard_position(self):
         self.direction = "down"
         self.acceleration = 10
+        self.msg_acceleration.emit("Speed: x" + str(-(self.acceleration - 20) / 10))
         self.snake = [[5, 10], [5, 11]]
         self.head_x = self.snake[0][0]
         self.head_y = self.snake[0][1]
@@ -308,7 +309,6 @@ class Play_zone(QFrame):
                 self.msg_level.emit("Level: " + str(self.level))
                 self.start()
             else:
-                self.setStyleSheet("background-color : blue;")
                 self.update()
                 self.end_game("You won")
 
@@ -330,7 +330,6 @@ class Play_zone(QFrame):
                 self.set_standard_position()
                 self.start()
             else:
-                self.setStyleSheet("background-color : black;")
                 self.update()
                 self.end_game("You lose")
 
@@ -367,9 +366,27 @@ class Play_zone(QFrame):
     def end_game(self, message):
         end = QMessageBox()
         end.setWindowTitle("game over")
-        end.setText(message)
-        end.setStandardButtons(QMessageBox.Ok)
+        end.setText(message + "\nAnother one?")
+        end.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        end.buttonClicked.connect(self.button_handler)
         end.exec_()
+
+    def button_handler(self, button):
+        if button.text() == "&Yes":
+            self.restart()
+
+    def restart(self):
+        self.set_standard_position()
+        self.score = 0
+        self.food = []
+        self.lives = 3
+        self.level = 1
+        self.drop_food()
+        self.msg_acceleration.emit("Speed: x" + str(-(self.acceleration - 20) / 10))
+        self.msg_lives.emit("Lives: " + str(self.lives))
+        self.msg_score.emit("Score: " + str(self.score))
+        self.msg_level.emit("Level: " + str(self.level))
+        self.start()
 
 
 if __name__ == "__main__":
