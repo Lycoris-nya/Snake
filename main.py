@@ -1,6 +1,7 @@
 import random
 import sys
 import json
+from collections import deque
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import *
@@ -205,6 +206,7 @@ class Play_zone(QFrame):
     max_level = 4
     start_speed = 10
     start_direction = "down"
+    last_direction = "down"
     snake_colour = 0x1C542D
     wall_colour = 0x2F4F4F
 
@@ -228,6 +230,7 @@ class Play_zone(QFrame):
         else:
             self.new_run()
         self.max_len = 4
+        self.directions = deque()
         self.timer = QBasicTimer()
         self.default_speed = 120
         self.food = []
@@ -249,6 +252,7 @@ class Play_zone(QFrame):
                 self.level = data["snake"]["level"]
                 self.direction = data["snake"]["direction"]
                 self.acceleration = data["snake"]["acceleration"]
+                self.last_direction = data["snake"]["last_direction"]
                 self.snake = data["snake"]["body"]
                 self.head_x = self.snake[0][0]
                 self.head_y = self.snake[0][1]
@@ -280,19 +284,34 @@ class Play_zone(QFrame):
             self.msg_exit.emit()
 
         if key == Qt.Key_Down:
-            if self.direction != "up":
-                self.direction = "down"
+            self.directions.append("down")
         elif key == Qt.Key_Up:
-            if self.direction != "down":
-                self.direction = "up"
+            self.directions.append("up")
 
         elif key == Qt.Key_Left:
-            if self.direction != "right":
-                self.direction = "left"
+            self.directions.append("left")
 
         elif key == Qt.Key_Right:
-            if self.direction != "left":
-                self.direction = "right"
+            self.directions.append("right")
+
+    def change_direction(self):
+        if len(self.directions) > 0:
+            new_direction = self.directions.popleft()
+            if new_direction == "down":
+                if self.direction != "up":
+                    self.direction = "down"
+
+            elif new_direction == "up":
+                if self.direction != "down":
+                    self.direction = "up"
+
+            elif new_direction == "left":
+                if self.direction != "right":
+                    self.direction = "left"
+
+            elif new_direction == "right":
+                if self.direction != "left":
+                    self.direction = "right"
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -320,7 +339,9 @@ class Play_zone(QFrame):
             self.update()
 
     def set_standard_position(self):
+        self.directions = deque()
         self.direction = self.start_direction
+        self.last_direction = self.start_direction
         self.acceleration = self.start_speed
         self.msg_acceleration.emit("Speed: x" + self.generate_speed_text())
         self.snake = [[5, 10], [5, 11]]
@@ -364,6 +385,8 @@ class Play_zone(QFrame):
         self.levels["4"] = fourth_level
 
     def move_snake(self):
+        self.change_direction()
+
         if self.direction == "left":
             self.head_x, self.head_y = self.head_x - 1, self.head_y
             if self.head_x < 0:
@@ -383,6 +406,7 @@ class Play_zone(QFrame):
             self.head_x, self.head_y = self.head_x, self.head_y - 1
             if self.head_y < 0:
                 self.head_y = Play_zone.number_blocks_y
+
 
         head = [self.head_x, self.head_y]
         self.snake.insert(0, head)
