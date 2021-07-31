@@ -162,6 +162,23 @@ class Ui_MainWindow(QMainWindow):
         self.mv.close()
 
 
+# class Portal():
+#
+#     color_1 = 0xf5ffff
+#     color_2 = 0xc3cef7
+#     color_3 = 0xe3bbf2
+#
+#     def __init__(self, x, y, color):
+#         self.x = x
+#         self.y = y
+#         if color == 1:
+#             self.color = self.color_1
+#         elif color == 2:
+#             self.color = self.color_2
+#         else:
+#             self.color = self.color_3
+
+
 class Food:
     acceleration = 0
     score = 1
@@ -209,6 +226,7 @@ class Play_zone(QFrame):
     last_direction = "down"
     snake_colour = 0x1C542D
     wall_colour = 0x2F4F4F
+    portal_color = 0xe3bbf2
 
     msg_score = pyqtSignal(str)
     msg_acceleration = pyqtSignal(str)
@@ -252,7 +270,7 @@ class Play_zone(QFrame):
                 self.level = data["snake"]["level"]
                 self.direction = data["snake"]["direction"]
                 self.acceleration = data["snake"]["acceleration"]
-                self.last_direction = data["snake"]["last_direction"]
+                self.portals = data["portals"]
                 self.snake = data["snake"]["body"]
                 self.head_x = self.snake[0][0]
                 self.head_y = self.snake[0][1]
@@ -265,7 +283,9 @@ class Play_zone(QFrame):
         self.lives = 3
         self.level = 1
         self.levels = dict()
+        self.portals = dict()
         self.make_levels()
+        self.make_portal()
 
     def saved_run(self):
         pass
@@ -317,6 +337,10 @@ class Play_zone(QFrame):
         painter = QPainter(self)
         rect = self.contentsRect()
         top_board = rect.bottom() - Play_zone.number_blocks_y * self.rect_height()
+
+        for portal in self.portals[str(self.level)]:
+            self.draw_rect(painter, rect.left() + portal[0] * self.rect_width(),
+                           top_board + portal[1] * self.rect_height(), QColor(self.portal_color))
 
         for wall in self.levels[str(self.level)]:
             self.draw_rect(painter, rect.left() + wall[0] * self.rect_width(),
@@ -386,27 +410,31 @@ class Play_zone(QFrame):
 
     def move_snake(self):
         self.change_direction()
+        if self.is_portal():
+            if self.snake[0] == self.portals[str(self.level)][0]:
+                self.head_x, self.head_y = self.portals[str(self.level)][1][0], self.portals[str(self.level)][1][1]
+            else:
+                self.head_x, self.head_y = self.portals[str(self.level)][0][0], self.portals[str(self.level)][0][1]
+        else:
+            if self.direction == "left":
+                self.head_x, self.head_y = self.head_x - 1, self.head_y
+                if self.head_x < 0:
+                    self.head_x = Play_zone.number_blocks_x - 1
 
-        if self.direction == "left":
-            self.head_x, self.head_y = self.head_x - 1, self.head_y
-            if self.head_x < 0:
-                self.head_x = Play_zone.number_blocks_x - 1
+            if self.direction == "right":
+                self.head_x, self.head_y = self.head_x + 1, self.head_y
+                if self.head_x == Play_zone.number_blocks_x:
+                    self.head_x = 0
 
-        if self.direction == "right":
-            self.head_x, self.head_y = self.head_x + 1, self.head_y
-            if self.head_x == Play_zone.number_blocks_x:
-                self.head_x = 0
+            if self.direction == "down":
+                self.head_x, self.head_y = self.head_x, self.head_y + 1
+                if self.head_y == Play_zone.number_blocks_y:
+                    self.head_y = 0
 
-        if self.direction == "down":
-            self.head_x, self.head_y = self.head_x, self.head_y + 1
-            if self.head_y == Play_zone.number_blocks_y:
-                self.head_y = 0
-
-        if self.direction == "up":
-            self.head_x, self.head_y = self.head_x, self.head_y - 1
-            if self.head_y < 0:
-                self.head_y = Play_zone.number_blocks_y
-
+            if self.direction == "up":
+                self.head_x, self.head_y = self.head_x, self.head_y - 1
+                if self.head_y < 0:
+                    self.head_y = Play_zone.number_blocks_y
 
         head = [self.head_x, self.head_y]
         self.snake.insert(0, head)
@@ -466,6 +494,12 @@ class Play_zone(QFrame):
                 self.update()
                 self.end_game("You lose")
 
+    def is_portal(self):
+        if (self.snake[0] == self.portals[str(self.level)][0] and self.snake[1] != self.portals[str(self.level)][1]) \
+                or (self.snake[0] == self.portals[str(self.level)][1] and self.snake[1] != self.portals[str(self.level)][0]):
+            return True
+        return False
+
     def is_food_collision(self):
         max_speed = 15
         for food in self.food:
@@ -490,10 +524,12 @@ class Play_zone(QFrame):
         for coordinates in self.levels[str(self.level)]:
             if coordinates == [x, y]:
                 self.drop_food()
+                return
 
         for coordinates in self.snake:
             if coordinates == [x, y]:
                 self.drop_food()
+                return
         self.food.append(Food(x, y))
 
     def end_game(self, message):
@@ -537,12 +573,27 @@ class Play_zone(QFrame):
             f = json.dumps({"snake": {"direction": self.direction, "acceleration": self.acceleration,
                                       "body": self.snake, "head_x": self.snake[0][0], "head_y": self.snake[0][1],
                                       "score": self.score, "lives": self.lives, "level": self.level},
-                            "levels": self.levels})
+                            "levels": self.levels,
+                            "portals": self.portals})
             with open("save.txt", "w") as q:
                 q.write(f)
                 self.start()
         else:
             self.start()
+
+    def make_portal(self):
+        x_enter = random.randint(12, 38)
+        y_enter = random.randint(12, 24)
+        x_exit = random.randint(12, 38)
+        y_exit = random.randint(12, 24)
+        while x_enter == x_exit and y_enter == y_exit:
+            x_exit = random.randint(12, 38)
+            y_exit = random.randint(12, 24)
+        self.portals["1"] = [[x_enter, y_enter], [x_exit, y_exit]]
+        self.portals["2"] = [[self.number_blocks_x // 2, 5], [self.number_blocks_x // 2, self.number_blocks_y - 5]]
+        self.portals["3"] = [[6 * random.randint(2, 4) + 3, self.number_blocks_y // 2],
+                             [6 * random.randint(2, 4) + 5, self.number_blocks_y // 2]]
+        self.portals["4"] = [[7, 7], [21, 21]]
 
 
 if __name__ == "__main__":
