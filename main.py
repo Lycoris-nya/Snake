@@ -79,14 +79,14 @@ class Ui_MainWindow(QMainWindow):
         self.play_zone.msg_acceleration[str].connect(self.text_speed.setText)
         self.play_zone.msg_lives[str].connect(self.text_lives.setText)
         self.play_zone.msg_level[str].connect(self.text_level.setText)
-        self.play_zone.msg_exit.connect(self.back_to_menu)
+        self.play_zone.msg_exit.connect(self.back_to_menu_from_play_zone)
         self.play_zone.start()
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.retranslate_ui(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
-    def back_to_menu(self):
+    def back_to_menu_from_play_zone(self):
         self.centralwidget.hide()
         self.setup_ui_menu(self.mv)
 
@@ -133,6 +133,7 @@ class Ui_MainWindow(QMainWindow):
         self.text_info.setStyleSheet(
             "background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 rgba(227, 239, 227, 181), stop:1 rgba(255, 255, 255, 255));")
         self.text_info.setObjectName("info")
+        self.text_info.clicked.connect(self.from_menu_to_info)
 
         self.text_exit = QtWidgets.QPushButton(self.menu_widget)
         self.text_exit.setGeometry(QtCore.QRect(100, 360, 500, 100))
@@ -158,26 +159,106 @@ class Ui_MainWindow(QMainWindow):
         self.menu_widget.hide()
         self.setup_ui_main_widgets(self.mv)
 
+    def from_menu_to_info(self):
+        self.menu_widget.hide()
+        self.setup_info_Ui(self.mv)
+
+    def from_info_to_menu(self):
+        self.info_centralwidget.hide()
+        self.setup_ui_menu(self.mv)
+
     def exit(self):
         self.mv.close()
 
+    def setup_info_Ui(self, MainWindow):
+        self.info_centralwidget = QtWidgets.QWidget(MainWindow)
+        self.info_centralwidget.setObjectName("info_centralwidget")
+        self.info_background = QtWidgets.QLabel(self.info_centralwidget)
+        self.info_background.setGeometry(QtCore.QRect(0, 0, 700, 600))
+        self.info_background.setText("")
+        self.info_background.setPixmap(QtGui.QPixmap("info.jpg"))
+        self.info_background.setObjectName("info_background")
+        self.pushButton = QtWidgets.QPushButton(self.info_centralwidget)
+        self.pushButton.setGeometry(QtCore.QRect(30, 500, 150, 70))
+        font = QtGui.QFont()
+        font.setFamily("Garamond")
+        font.setPointSize(14)
+        self.pushButton.setFont(font)
+        self.pushButton.setStyleSheet(
+            "background-color: qlineargradient(spread:pad, x1:0, y1:0.488636, x2:1, y2:0.494318, stop:0 rgba(219, 217, 168, 255), stop:1 rgba(255, 255, 255, 255));")
+        self.pushButton.setObjectName("pushButton")
+        self.pushButton.clicked.connect(self.from_info_to_menu)
+        self.info_text = QtWidgets.QLabel(self.info_centralwidget)
+        self.info_text.setGeometry(QtCore.QRect(80, 30, 570, 180))
+        font = QtGui.QFont()
+        font.setFamily("Garamond")
+        font.setPointSize(7)
+        font.setBold(True)
+        font.setWeight(75)
+        self.info_text.setFont(font)
+        self.info_text.setObjectName("info_text")
+        self.wall_color = QtWidgets.QLabel(self.info_centralwidget)
+        self.wall_color.setGeometry(QtCore.QRect(80, 210, 520, 40))
+        font = QtGui.QFont()
+        font.setFamily("Garamond")
+        font.setPointSize(11)
+        font.setBold(True)
+        font.setWeight(75)
+        self.wall_color.setFont(font)
+        self.wall_color.setStyleSheet("background-color: rgb(47, 79, 79);\n"
+                                      "color: rgb(255, 255, 255);\n"
+                                      "")
+        self.wall_color.setObjectName("wall_color")
+        self.decrease_colour = QtWidgets.QLabel(self.info_centralwidget)
+        self.decrease_colour.setGeometry(QtCore.QRect(80, 330, 520, 40))
+        self.decrease_colour.setFont(font)
+        self.decrease_colour.setStyleSheet("background-color: rgb(140, 23, 120);\n"
+                                           "color: rgb(255, 255, 255);")
+        self.decrease_colour.setObjectName("decrease_colour")
+        self.default_colour = QtWidgets.QLabel(self.info_centralwidget)
+        self.default_colour.setGeometry(QtCore.QRect(80, 290, 520, 40))
+        self.default_colour.setFont(font)
+        self.default_colour.setStyleSheet("background-color: rgb(239, 211, 52);")
+        self.default_colour.setObjectName("default_colour")
+        self.portal_colour = QtWidgets.QLabel(self.info_centralwidget)
+        self.portal_colour.setGeometry(QtCore.QRect(80, 250, 520, 40))
+        self.portal_colour.setFont(font)
+        self.portal_colour.setStyleSheet("background-color: rgb(227, 187, 242);")
+        self.portal_colour.setObjectName("portal_colour")
+        self.bonus_colour = QtWidgets.QLabel(self.info_centralwidget)
+        self.bonus_colour.setGeometry(QtCore.QRect(80, 450, 520, 40))
+        self.bonus_colour.setFont(font)
+        self.bonus_colour.setStyleSheet("background-color: rgb(237, 72, 48);")
+        self.bonus_colour.setObjectName("bonus_colour")
+        self.fast_colour = QtWidgets.QLabel(self.info_centralwidget)
+        self.fast_colour.setGeometry(QtCore.QRect(80, 410, 520, 40))
+        self.fast_colour.setFont(font)
+        self.fast_colour.setStyleSheet("background-color: rgb(50, 18, 122);\n"
+                                       "color: rgb(255, 255, 255);")
+        self.fast_colour.setObjectName("fast_colour")
+        self.slow_colour = QtWidgets.QLabel(self.info_centralwidget)
+        self.slow_colour.setGeometry(QtCore.QRect(80, 370, 520, 40))
+        self.slow_colour.setFont(font)
+        self.slow_colour.setStyleSheet("background-color: rgb(0, 197, 205);")
+        self.slow_colour.setObjectName("slow_colour")
+        MainWindow.setCentralWidget(self.info_centralwidget)
 
-# class Portal():
-#
-#     color_1 = 0xf5ffff
-#     color_2 = 0xc3cef7
-#     color_3 = 0xe3bbf2
-#
-#     def __init__(self, x, y, color):
-#         self.x = x
-#         self.y = y
-#         if color == 1:
-#             self.color = self.color_1
-#         elif color == 2:
-#             self.color = self.color_2
-#         else:
-#             self.color = self.color_3
+        self.retranslate_info_Ui(MainWindow)
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
+    def retranslate_info_Ui(self, MainWindow):
+        _translate = QtCore.QCoreApplication.translate
+        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.pushButton.setText(_translate("MainWindow", "Back"))
+        self.info_text.setText(_translate("MainWindow",
+                                          "<html><head/><body><p>Управление змейкой происходит с помощью стрелок</p><p>Q - сохранить игру</p><p>W - выйти из игры </p><p>После запуска игры щелкните мышкой по игровому полю</p><p>Обозначения:</p><p><br/></p></body></html>"))
+        self.wall_color.setText(_translate("MainWindow", "- преграда"))
+        self.decrease_colour.setText(_translate("MainWindow", "- еда уменьшающая змейку"))
+        self.default_colour.setText(_translate("MainWindow", "- стандартная еда"))
+        self.portal_colour.setText(_translate("MainWindow", "- портал"))
+        self.bonus_colour.setText(_translate("MainWindow", "- еда с бонусными очками"))
+        self.fast_colour.setText(_translate("MainWindow", "- еда увеличивающая скорость"))
+        self.slow_colour.setText(_translate("MainWindow", "- еда уменьшающая скорость"))
 
 class Food:
     acceleration = 0
