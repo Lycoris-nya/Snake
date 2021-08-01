@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import QFrame, QMainWindow, QMessageBox
 class Ui_MainWindow(QMainWindow):
 
     def setupUi(self, MainWindow):
+        self.main_window = MainWindow
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(700, 600)
         MainWindow.setStyleSheet("")
@@ -83,14 +84,14 @@ class Ui_MainWindow(QMainWindow):
         self.play_zone.start()
 
         MainWindow.setCentralWidget(self.centralwidget)
-        self.retranslate_ui(MainWindow)
+        self.retranslate_play_zone_ui(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def back_to_menu_from_play_zone(self):
         self.centralwidget.hide()
-        self.setup_ui_menu(self.mv)
+        self.setup_ui_menu(self.main_window)
 
-    def retranslate_ui(self, MainWindow):
+    def retranslate_play_zone_ui(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Snake"))
         self.text_level.setText(_translate("MainWindow", "Level: " + str(self.play_zone.level)))
@@ -99,7 +100,6 @@ class Ui_MainWindow(QMainWindow):
         self.text_speed.setText(_translate("MainWindow", "Speed: x" + str(-(self.play_zone.acceleration - 20) / 10)))
 
     def setup_ui_menu(self, MainWindow):
-        self.mv = MainWindow
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(700, 600)
 
@@ -125,7 +125,7 @@ class Ui_MainWindow(QMainWindow):
         self.text_start.setStyleSheet(
             "background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 rgba(227, 239, 227, 181), stop:1 rgba(255, 255, 255, 255));")
         self.text_start.setObjectName("start")
-        self.text_start.clicked.connect(self.start)
+        self.text_start.clicked.connect(self.from_menu_to_play_zone)
 
         self.text_info = QtWidgets.QPushButton(self.menu_widget)
         self.text_info.setGeometry(QtCore.QRect(100, 220, 500, 100))
@@ -155,20 +155,20 @@ class Ui_MainWindow(QMainWindow):
         self.text_info.setText(_translate("MainWindow", "Info"))
         self.text_exit.setText(_translate("MainWindow", "Exit"))
 
-    def start(self):
+    def from_menu_to_play_zone(self):
         self.menu_widget.hide()
-        self.setup_ui_main_widgets(self.mv)
+        self.setup_ui_main_widgets(self.main_window)
 
     def from_menu_to_info(self):
         self.menu_widget.hide()
-        self.setup_info_Ui(self.mv)
+        self.setup_info_Ui(self.main_window)
 
     def from_info_to_menu(self):
         self.info_centralwidget.hide()
-        self.setup_ui_menu(self.mv)
+        self.setup_ui_menu(self.main_window)
 
     def exit(self):
-        self.mv.close()
+        self.main_window.close()
 
     def setup_info_Ui(self, MainWindow):
         self.info_centralwidget = QtWidgets.QWidget(MainWindow)
@@ -260,6 +260,7 @@ class Ui_MainWindow(QMainWindow):
         self.fast_colour.setText(_translate("MainWindow", "- еда увеличивающая скорость"))
         self.slow_colour.setText(_translate("MainWindow", "- еда уменьшающая скорость"))
 
+
 class Food:
     acceleration = 0
     score = 1
@@ -273,10 +274,10 @@ class Food:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        constructors = [self.default_score, self.default_score, self.default_score, self.default_score,
-                        self.default_score, self.bonus_score, self.decrease_score, self.fast_score, self.fast_score,
-                        self.slow_score]
-        constructors[random.randint(0, 9)]()
+        fabrics = [self.default_score, self.default_score, self.default_score, self.default_score,
+                   self.default_score, self.bonus_score, self.decrease_score, self.fast_score, self.fast_score,
+                   self.slow_score]
+        random.choice(fabrics)()
 
     def default_score(self):
         self.color = QColor(self.default_colour)
@@ -304,7 +305,6 @@ class Play_zone(QFrame):
     max_level = 4
     start_speed = 10
     start_direction = "down"
-    last_direction = "down"
     snake_colour = 0x1C542D
     wall_colour = 0x2F4F4F
     portal_color = 0xe3bbf2
@@ -317,8 +317,8 @@ class Play_zone(QFrame):
 
     def __init__(self, parent):
         super(Play_zone, self).__init__(parent)
-        with open("save.txt", "r") as q:
-            line = q.read()
+        with open("save.txt", "r") as save:
+            line = save.read()
         if len(line) > 0:
             save_box = QMessageBox()
             save_box.setWindowTitle("save")
@@ -342,8 +342,8 @@ class Play_zone(QFrame):
 
     def button_handler_start(self, button):
         if button.text() == "&Yes":
-            with open("save.txt", "r") as q:
-                line = q.read()
+            with open("save.txt", "r") as save:
+                line = save.read()
                 data = json.loads(line)
                 self.levels = data["levels"]
                 self.score = data["snake"]["score"]
@@ -367,9 +367,6 @@ class Play_zone(QFrame):
         self.portals = dict()
         self.make_levels()
         self.make_portal()
-
-    def saved_run(self):
-        pass
 
     def start(self):
         self.timer.start(self.default_speed * self.acceleration // 10, self)
@@ -446,7 +443,6 @@ class Play_zone(QFrame):
     def set_standard_position(self):
         self.directions = deque()
         self.direction = self.start_direction
-        self.last_direction = self.start_direction
         self.acceleration = self.start_speed
         self.msg_acceleration.emit("Speed: x" + self.generate_speed_text())
         self.snake = [[5, 10], [5, 11]]
@@ -577,7 +573,8 @@ class Play_zone(QFrame):
 
     def is_portal(self):
         if (self.snake[0] == self.portals[str(self.level)][0] and self.snake[1] != self.portals[str(self.level)][1]) \
-                or (self.snake[0] == self.portals[str(self.level)][1] and self.snake[1] != self.portals[str(self.level)][0]):
+                or (
+                self.snake[0] == self.portals[str(self.level)][1] and self.snake[1] != self.portals[str(self.level)][0]):
             return True
         return False
 
@@ -599,8 +596,13 @@ class Play_zone(QFrame):
                 self.drop_food()
 
     def drop_food(self):
-        x = random.randint(3, 38)
-        y = random.randint(3, 24)
+        x = random.randint(3, self.number_blocks_x - 2)
+        y = random.randint(3, self.number_blocks_y - 2)
+
+        for coordinates in self.portals[str(self.level)]:
+            if coordinates == [x, y]:
+                self.drop_food()
+                return
 
         for coordinates in self.levels[str(self.level)]:
             if coordinates == [x, y]:
@@ -656,8 +658,8 @@ class Play_zone(QFrame):
                                       "score": self.score, "lives": self.lives, "level": self.level},
                             "levels": self.levels,
                             "portals": self.portals})
-            with open("save.txt", "w") as q:
-                q.write(f)
+            with open("save.txt", "w") as save:
+                save.write(f)
                 self.start()
         else:
             self.start()
