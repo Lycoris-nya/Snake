@@ -460,8 +460,7 @@ class Play_zone(QFrame):
         return self.contentsRect().height() / Play_zone.number_blocks_y
 
     def make_levels(self):
-        first_level = []
-        self.levels["1"] = first_level
+        self.levels["1"] = []
         second_level = []
         for i in range(0, Play_zone.number_blocks_x):
             second_level.append([i, 0])
@@ -541,14 +540,10 @@ class Play_zone(QFrame):
     def change_level(self):
         if len(self.snake) >= self.max_len and self.level < self.max_level:
             self.timer.stop()
-            if len(self.levels) > self.level:
-                self.set_standard_position()
-                self.level += 1
-                self.msg_level.emit("Level: " + str(self.level))
-                self.start()
-            else:
-                self.update()
-                self.end_game("You won")
+            self.set_standard_position()
+            self.level += 1
+            self.msg_level.emit("Level: " + str(self.level))
+            self.start()
 
     def is_death(self):
         death = False
@@ -665,13 +660,13 @@ class Play_zone(QFrame):
             self.start()
 
     def make_portal(self):
-        x_enter = random.randint(12, 38)
-        y_enter = random.randint(12, 24)
-        x_exit = random.randint(12, 38)
-        y_exit = random.randint(12, 24)
+        x_enter = random.randint(12, self.number_blocks_x - 2)
+        y_enter = random.randint(12, self.number_blocks_y - 2)
+        x_exit = random.randint(12, self.number_blocks_x - 2)
+        y_exit = random.randint(12, self.number_blocks_y - 2)
         while x_enter == x_exit and y_enter == y_exit:
-            x_exit = random.randint(12, 38)
-            y_exit = random.randint(12, 24)
+            x_exit = random.randint(12, self.number_blocks_x - 2)
+            y_exit = random.randint(12, self.number_blocks_y - 2)
         self.portals["1"] = [[x_enter, y_enter], [x_exit, y_exit]]
         self.portals["2"] = [[self.number_blocks_x // 2, 5], [self.number_blocks_x // 2, self.number_blocks_y - 5]]
         self.portals["3"] = [[6 * random.randint(2, 4) + 3, self.number_blocks_y // 2],
