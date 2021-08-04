@@ -4,7 +4,6 @@ import json
 from collections import deque
 import os
 
-import PyQt5.QtBluetooth
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtCore import pyqtSignal, QBasicTimer
@@ -336,7 +335,9 @@ class Play_zone(QFrame):
 
     START_POSITION = [[5, 11], [5, 10]]
     MAX_LEVEL = 4
+    MAX_LEN = 4
 
+    default_speed = 120
     start_speed = 10
     start_direction = "down"
     live_count = 3
@@ -362,16 +363,97 @@ class Play_zone(QFrame):
         else:
             self.new_run()
 
-        self.MAX_LEN = 4
+        self.direction = self.start_direction
         self.directions = deque()
         self.timer = QBasicTimer()
-        self.default_speed = 120
         self.grow_snake = False
         self.speed_changed = False
         self.score_changed = False
         self.decrease_snake = False
         self.setFocusPolicy(Qt.StrongFocus)
 
+    @staticmethod
+    def new_direction(current_direction, directions):
+        if len(directions) > 0:
+            new_direction = directions.popleft()
+            if new_direction == "down":
+                if current_direction != "up":
+                    return "down"
+
+            elif new_direction == "up":
+                if current_direction != "down":
+                    return "up"
+
+            elif new_direction == "left":
+                if current_direction != "right":
+                    return "left"
+
+            elif new_direction == "right":
+                if current_direction != "left":
+                    return "right"
+        return current_direction
+
+    @staticmethod
+    def make_levels():
+        levels = {"1": []}
+        second_level = []
+        for i in range(0, Play_zone.NUMBER_BLOCKS_X):
+            second_level.append([i, 0])
+            second_level.append([i, Play_zone.NUMBER_BLOCKS_Y - 1])
+        for i in range(0, Play_zone.NUMBER_BLOCKS_Y):
+            second_level.append([0, i])
+            second_level.append([Play_zone.NUMBER_BLOCKS_X - 1, i])
+        levels["2"] = second_level
+        third_level = []
+        for i in range(0, Play_zone.NUMBER_BLOCKS_X, 6):
+            start_wall = random.randint(5, Play_zone.NUMBER_BLOCKS_Y)
+            end_wall = random.randint(5, Play_zone.NUMBER_BLOCKS_Y)
+            if start_wall > end_wall:
+                start_wall, end_wall = end_wall, start_wall
+            for j in range(start_wall, end_wall):
+                third_level.append([i, j])
+        levels["3"] = third_level
+        fourth_level = []
+        for i in range(0, Play_zone.NUMBER_BLOCKS_X, 6):
+            for j in range(0, Play_zone.NUMBER_BLOCKS_Y, 6):
+                fourth_level.append([i, j])
+        levels["4"] = fourth_level
+        return levels
+
+    @staticmethod
+    def make_step(direction, head_x, head_y):
+        if direction == "left":
+            head_x, head_y = head_x - 1, head_y
+            if head_x < 0:
+                head_x = Play_zone.NUMBER_BLOCKS_X - 1
+
+        if direction == "right":
+            head_x, head_y = head_x + 1, head_y
+            if head_x == Play_zone.NUMBER_BLOCKS_X:
+                head_x = 0
+
+        if direction == "down":
+            head_x, head_y = head_x, head_y + 1
+            if head_y == Play_zone.NUMBER_BLOCKS_Y:
+                head_y = 0
+
+        if direction == "up":
+            head_x, head_y = head_x, head_y - 1
+            if head_y < 0:
+                head_y = Play_zone.NUMBER_BLOCKS_Y
+
+        return [head_x, head_y]
+
+    @staticmethod
+    def check_death(head, level, snake):
+        for coordinates in level:
+            if coordinates == head:
+                return True
+        for snake_point in snake[1:]:
+            if snake_point == head:
+                return True
+        return False
+    
     def button_handler_start(self, button):
 
         if button.text() == "&Yes":
@@ -387,6 +469,7 @@ class Play_zone(QFrame):
                     self.acceleration = data["snake"]["acceleration"]
                     self.snake = data["snake"]["body"]
                     self.portals = data["portals"]
+
                     self.food = []
                     for food_data in data["food"]:
                         food_ = food()
@@ -440,27 +523,6 @@ class Play_zone(QFrame):
         elif key == Qt.Key_Right:
             self.directions.append("right")
 
-    @staticmethod
-    def new_direction(current_direction, directions):
-        if len(directions) > 0:
-            new_direction = directions.popleft()
-            if new_direction == "down":
-                if current_direction != "up":
-                    return "down"
-
-            elif new_direction == "up":
-                if current_direction != "down":
-                    return "up"
-
-            elif new_direction == "left":
-                if current_direction != "right":
-                    return "left"
-
-            elif new_direction == "right":
-                if current_direction != "left":
-                    return "right"
-        return current_direction
-
     def paintEvent(self, event):
         painter = QPainter(self)
         rect = self.contentsRect()
@@ -509,59 +571,7 @@ class Play_zone(QFrame):
     def rect_height(self):
         return self.contentsRect().height() / Play_zone.NUMBER_BLOCKS_Y
 
-    @staticmethod
-    def make_levels():
-        levels = {"1": []}
-        second_level = []
-        for i in range(0, Play_zone.NUMBER_BLOCKS_X):
-            second_level.append([i, 0])
-            second_level.append([i, Play_zone.NUMBER_BLOCKS_Y - 1])
-        for i in range(0, Play_zone.NUMBER_BLOCKS_Y):
-            second_level.append([0, i])
-            second_level.append([Play_zone.NUMBER_BLOCKS_X - 1, i])
-        levels["2"] = second_level
-        third_level = []
-        for i in range(0, Play_zone.NUMBER_BLOCKS_X, 6):
-            start_wall = random.randint(5, Play_zone.NUMBER_BLOCKS_Y)
-            end_wall = random.randint(5, Play_zone.NUMBER_BLOCKS_Y)
-            if start_wall > end_wall:
-                start_wall, end_wall = end_wall, start_wall
-            for j in range(start_wall, end_wall):
-                third_level.append([i, j])
-        levels["3"] = third_level
-        fourth_level = []
-        for i in range(0, Play_zone.NUMBER_BLOCKS_X, 6):
-            for j in range(0, Play_zone.NUMBER_BLOCKS_Y, 6):
-                fourth_level.append([i, j])
-        levels["4"] = fourth_level
-        return levels
-
-    @staticmethod
-    def make_step(direction, head_x, head_y):
-        if direction == "left":
-            head_x, head_y = head_x - 1, head_y
-            if head_x < 0:
-                head_x = Play_zone.NUMBER_BLOCKS_X - 1
-
-        if direction == "right":
-            head_x, head_y = head_x + 1, head_y
-            if head_x == Play_zone.NUMBER_BLOCKS_X:
-                head_x = 0
-
-        if direction == "down":
-            head_x, head_y = head_x, head_y + 1
-            if head_y == Play_zone.NUMBER_BLOCKS_Y:
-                head_y = 0
-
-        if direction == "up":
-            head_x, head_y = head_x, head_y - 1
-            if head_y < 0:
-                head_y = Play_zone.NUMBER_BLOCKS_Y
-
-        return [head_x, head_y]
-
     def move_snake(self):
-
         self.direction = self.new_direction(self.direction, self.directions)
 
         if self.is_portal():
@@ -604,6 +614,7 @@ class Play_zone(QFrame):
             self.level += 1
             self.msg_level.emit("Level: " + str(self.level))
             self.start()
+            self.drop_food()
 
     def is_death(self):
         death = self.check_death(self.snake[0], self.levels[str(self.level)], self.snake)
@@ -617,16 +628,6 @@ class Play_zone(QFrame):
             else:
                 self.update()
                 self.end_game("You lose")
-
-    @staticmethod
-    def check_death(head, level, snake):
-        for coordinates in level:
-            if coordinates == head:
-                return True
-        for snake_point in snake[1:]:
-            if snake_point == head:
-                return True
-        return False
 
     def is_portal(self):
         portal = self.portals[str(self.level)]
@@ -651,6 +652,8 @@ class Play_zone(QFrame):
                 self.drop_food()
 
     def drop_food(self):
+        if len(self.food) >= 1:
+            self.food = []
         x = random.randint(3, self.NUMBER_BLOCKS_X - 2)
         y = random.randint(3, self.NUMBER_BLOCKS_Y - 2)
 

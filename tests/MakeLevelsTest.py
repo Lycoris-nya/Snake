@@ -1,11 +1,14 @@
 import collections
 import unittest
+import copy
 from main import Play_zone
 
 
 def bfs(graph, root):
     queue = collections.deque([root])
+    graph = copy.deepcopy(graph)
     graph[root[1]][root[0]] = 1
+
     while queue:
         neighbours = []
         vertex = queue.popleft()
@@ -34,7 +37,6 @@ class MakeLevelsTest(unittest.TestCase):
         for level in levels.keys():
             for coordinates in Play_zone.START_POSITION:
                 self.assertFalse(coordinates in levels[level])
-        self.assertTrue(True)
 
     def test_all_place_available(self):
         levels = Play_zone.make_levels()
@@ -45,10 +47,7 @@ class MakeLevelsTest(unittest.TestCase):
             play_zone = bfs(play_zone, Play_zone.START_POSITION[0])
             for x in range(Play_zone.NUMBER_BLOCKS_X):
                 for y in range(Play_zone.NUMBER_BLOCKS_Y):
-                    if play_zone[y][x] != 1:
-                        self.assertTrue(False)
-
-        self.assertTrue(True)
+                    self.assertTrue(play_zone[y][x] != 0)
 
 
 if __name__ == '__main__':
