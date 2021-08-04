@@ -1,5 +1,6 @@
 # Snake
 Интерактивная игра с GUI, написанным с помощью PyQt5.
+![alt text](https://github.com/Lycoris-nya/Snake/blob/main/play_game.jpg?raw=true)
 ## Управление
 * Управление змейкой происходит с помощью стрелок
 * Q - сохранить игру
