@@ -7,25 +7,25 @@ from main import Play_zone
 def bfs(graph, root):
     queue = collections.deque([root])
     graph = copy.deepcopy(graph)
-    graph[root[1]][root[0]] = 1
+    graph[root[1]][root[0]] = 2
 
     while queue:
         neighbours = []
         vertex = queue.popleft()
-        if vertex[0] - 1 >= 0 and graph[vertex[1]][vertex[0] - 1] != 1:
+        if vertex[0] - 1 >= 0 and graph[vertex[1]][vertex[0] - 1] == 0:
             neighbours.append([vertex[0] - 1, vertex[1]])
 
-        if vertex[0] + 1 < Play_zone.NUMBER_BLOCKS_X and graph[vertex[1]][vertex[0] + 1] != 1:
+        if vertex[0] + 1 < Play_zone.NUMBER_BLOCKS_X and graph[vertex[1]][vertex[0] + 1] == 0:
             neighbours.append([vertex[0] + 1, vertex[1]])
 
-        if vertex[1] - 1 >= 0 and graph[vertex[1] - 1][vertex[0]] != 1:
+        if vertex[1] - 1 >= 0 and graph[vertex[1] - 1][vertex[0]] == 0:
             neighbours.append([vertex[0], vertex[1] - 1])
 
-        if vertex[1] + 1 < Play_zone.NUMBER_BLOCKS_Y and graph[vertex[1] + 1][vertex[0]] != 1:
+        if vertex[1] + 1 < Play_zone.NUMBER_BLOCKS_Y and graph[vertex[1] + 1][vertex[0]] == 0:
             neighbours.append([vertex[0], vertex[1] + 1])
 
         for neighbour in neighbours:
-            graph[neighbour[1]][neighbour[0]] = 1
+            graph[neighbour[1]][neighbour[0]] = 2
             queue.append(neighbour)
 
     return graph
