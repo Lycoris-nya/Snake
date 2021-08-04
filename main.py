@@ -4,6 +4,7 @@ import json
 from collections import deque
 import os
 
+import PyQt5.QtBluetooth
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtCore import pyqtSignal, QBasicTimer
