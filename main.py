@@ -363,7 +363,6 @@ class Play_zone(QFrame):
         else:
             self.new_run()
 
-        self.direction = self.start_direction
         self.directions = deque()
         self.timer = QBasicTimer()
         self.grow_snake = False
@@ -421,6 +420,12 @@ class Play_zone(QFrame):
         return levels
 
     @staticmethod
+    def load_levels(data):
+        levels = Play_zone.make_levels()
+        levels['3'] = data['levels']['3']
+        return levels
+
+    @staticmethod
     def make_step(direction, head_x, head_y):
         if direction == "left":
             head_x, head_y = head_x - 1, head_y
@@ -453,7 +458,7 @@ class Play_zone(QFrame):
             if snake_point == head:
                 return True
         return False
-    
+
     def button_handler_start(self, button):
 
         if button.text() == "&Yes":
@@ -469,7 +474,7 @@ class Play_zone(QFrame):
                     self.acceleration = data["snake"]["acceleration"]
                     self.snake = data["snake"]["body"]
                     self.portals = data["portals"]
-
+                    self.levels = Play_zone.load_levels(data)
                     self.food = []
                     for food_data in data["food"]:
                         food_ = food()
@@ -484,11 +489,12 @@ class Play_zone(QFrame):
                     save_box.exec_()
                     self.new_run()
 
-                self.levels = self.make_levels()
         else:
             self.new_run()
 
     def new_run(self):
+        
+        self.direction = self.start_direction
         self.set_standard_position()
         self.score = 0
         self.lives = self.live_count
@@ -711,12 +717,21 @@ class Play_zone(QFrame):
 
     def button_handler_save(self, button):
         if button.text() == "&Yes":
-            f = json.dumps({"snake": {"direction": self.direction, "acceleration": self.acceleration,
-                                      "body": self.snake, "head_x": self.snake[0][0], "head_y": self.snake[0][1],
-                                      "score": self.score, "lives": self.lives, "level": self.level},
-                            "portals": self.portals,
-                            "food": [{"pos_x": self.food[i].x, "pos_y": self.food[i].y, "type": self.food[i].type} for i
-                                     in range(len(self.food))]})
+            f = json.dumps(
+                {
+                    "snake": {
+                        "direction": self.direction, "acceleration": self.acceleration,
+                        "body": self.snake, "head_x": self.snake[0][0], "head_y": self.snake[0][1],
+                        "score": self.score, "lives": self.lives, "level": self.level,
+                    },
+                    "levels": {"3": self.levels['3']},
+                    "portals": self.portals,
+                    "food": [
+                        {"pos_x": self.food[i].x, "pos_y": self.food[i].y, "type": self.food[i].type}
+                        for i in range(len(self.food))
+                    ]
+                }
+            )
             with open("save.txt", "w") as save:
                 save.write(f)
             self.start()
